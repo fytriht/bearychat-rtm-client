@@ -1,0 +1,4 @@
+{
+  "presets": ["latest"],
+  "plugins": ["add-module-exports"]
+}

@@ -5,5 +5,30 @@
   "main": "index.js",
   "repository": "https://github.com/bearyinnovative/bearychat-rtm-client",
   "author": "Yue Wang <wangyue2002@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "optionalDependencies": {},
+  "scripts": {
+    "test": "jest",
+    "clean": "rm -rf lib",
+    "build:babel": "babel src -d lib --copy-files --source-maps inline",
+    "build": "npm run clean && npm run build:babel",
+    "build:doc": "markdown-toc -i README.md && markdown-toc -i README_CN.md",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "detect-node": "^2.0.3",
+    "ws": "^3.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-latest": "^6.24.1",
+    "jest": "^20.0.3"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coverageReporters": [
+      "text"
+    ]
+  }
 }
