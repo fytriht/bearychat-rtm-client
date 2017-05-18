@@ -1,6 +1,3 @@
-import regeneratorRuntime from 'regenerator-runtime';
-
-import WebSocket from './WebSocket';
 import { EventEmitter }  from 'events';
 import RTMConnectionState from './RTMConnectionState';
 import RTMConnectionEvents from './RTMConnectionEvents';
@@ -9,7 +6,8 @@ import delay from 'delay';
 import warning from 'warning';
 
 /**
- * Keep a WebSocket connection with server, handling heartbeat events.
+ * Keep a WebSocket connection with server, handling heartbeat events,
+ * omitting obsolete message types.
  *
  * State diagram:
  *
@@ -34,7 +32,7 @@ export default class RTMConnection extends EventEmitter {
 
   state = {};
 
-  constructor(url) {
+  constructor({ url, WebSocket }) {
     super();
     this._currentCallId = 0;
     this._state = RTMConnectionState.INITIAL;
