@@ -1,27 +1,37 @@
 {
   "name": "bearychat-rtm-client",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha7",
   "description": "RTM client for BearyChat",
-  "main": "index.js",
+  "main": "lib/index.js",
   "repository": "https://github.com/bearyinnovative/bearychat-rtm-client",
   "author": "Yue Wang <wangyue2002@gmail.com>",
   "license": "MIT",
   "optionalDependencies": {},
   "scripts": {
     "test": "jest",
-    "clean": "rm -rf lib",
-    "build:babel": "babel src -d lib --copy-files --source-maps inline",
+    "clean": "rm -f *.js",
+    "build:babel": "babel src -d . --source-maps inline",
     "build": "npm run clean && npm run build:babel",
     "build:doc": "markdown-toc -i README.md && markdown-toc -i README_CN.md",
     "prepublish": "npm run build"
   },
   "dependencies": {
+    "delay": "^2.0.0",
     "detect-node": "^2.0.3",
+    "regenerator-runtime": "^0.10.5",
+    "warning": "^3.0.0",
     "ws": "^3.0.0"
   },
+  "keywords": [
+    "BearyChat",
+    "API",
+    "chatops"
+  ],
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-latest": "^6.24.1",
     "jest": "^20.0.3"
   },

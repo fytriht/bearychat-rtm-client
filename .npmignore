@@ -1,1 +1,6 @@
 /src/
+/yarn.lock
+/.idea/
+/coverage/
+/.babelrc
+/.npmignore

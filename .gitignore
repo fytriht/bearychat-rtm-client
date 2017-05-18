@@ -1,4 +1,5 @@
 /node_modules/
-/lib/
+/*.js
 /.idea/
+/coverage/
 .DS_Store
