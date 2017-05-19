@@ -69,8 +69,8 @@ client.on(RTMClientEvents.OFFLINE, function() {
   console.log('RTM offline');
 });
 
-client.on(RTMClientEvents.MESSAGE, function(message) {
-  console.log('message received: ', message);
+client.on(RTMClientEvents.EVENT, function(message) {
+  console.log('event message received: ', message);
 });
 
 client.send({
@@ -106,8 +106,8 @@ client.on(RTMClientEvents.OFFLINE, function() {
   console.log('RTM offline');
 });
 
-client.on(RTMClientEvents.MESSAGE, function(message) {
-  console.log('message received: ', message);
+client.on(RTMClientEvents.EVENT, function(message) {
+  console.log('event message received: ', message);
 });
 
 client.send({
