@@ -6,6 +6,7 @@ import RTMClientEvents from './RTMClientEvents';
 import RTMClientState from './RTMClientState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMConnection from './RTMConnection';
+import RTMMessageTypes from './RTMMessageTypes';
 
 class RTMTimeoutError extends Error {
   constructor(errorMessage, rtmMessage) {
@@ -50,6 +51,8 @@ export default class RTMClient extends EventEmitter {
   static RTMClientEvents = RTMClientEvents;
 
   static RTMClientState = RTMClientState;
+
+  static RTMMessageTypes = RTMMessageTypes;
 
   constructor(options) {
     super();
