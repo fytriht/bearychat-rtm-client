@@ -123,7 +123,7 @@ client.send({
 | RTMClientEvents.ONLINE| client connected |
 | RTMClientEvents.OFFLINE | client disconnected |
 | RTMClientEvents.CLOSE | client closed |
-| RTMClientEvents.MESSAGE | receive message from server |
+| RTMClientEvents.EVENT | receive event message from server |
 | RTMClientEvents.ERROR | error occurred |
 
 ### Client state
@@ -140,6 +140,7 @@ RECONNECT+------->CONNECTING<---------+CLOSED
     |    server      |                    |
     |    close/      v        close       +
     +------------+CONNECTED+---------->CLOSING
+         error
 ```
 
 ### RTM events

@@ -207,7 +207,7 @@ export default class RTMClient extends EventEmitter {
   };
 
   _handleConnectionMessage = (message) => {
-    this.emit(RTMClientEvents.MESSAGE, message);
+    this.emit(RTMClientEvents.EVENT, message);
   };
 
   getState() {

@@ -2,7 +2,7 @@ const RTMClientEvents = {
   ONLINE: 'online',
   OFFLINE: 'offline',
   CLOSE: 'close',
-  MESSAGE: 'message',
+  EVENT: 'event',
   ERROR: 'error'
 };
 
