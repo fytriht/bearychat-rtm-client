@@ -1,25 +1,25 @@
-
-
-<!-- toc -->
-
-- [BearyChat OpenAPI RTM Client](#bearychat-openapi-rtm-client)
-  * [Install](#install)
-  * [Usage](#usage)
-    + [API](#api)
-      - [RTMClient](#rtmclient)
-    + [Browser usage:](#browser-usage)
-    + [Node.js usage:](#nodejs-usage)
-    + [Client events](#client-events)
-    + [Client state](#client-state)
-    + [RTM events](#rtm-events)
-    + [Examples](#examples)
-  * [LICENSE](#license)
-
-<!-- tocstop -->
-
 # BearyChat OpenAPI RTM Client
 
 Compatible with Node.js, Webpack and Browserify.
+
+[![@BearyChat](http://openapi.beary.chat/badge.svg)](http://openapi.beary.chat/join)
+[![npm version](https://badge.fury.io/js/bearychat-rtm-client.svg)](https://npmjs.com/package/bearychat-rtm-client)
+
+<!-- toc -->
+
+- [Install](#install)
+- [Usage](#usage)
+  * [API](#api)
+    + [RTMClient](#rtmclient)
+  * [Browser usage:](#browser-usage)
+  * [Node.js usage:](#nodejs-usage)
+  * [Client events](#client-events)
+  * [Client state](#client-state)
+  * [RTM events](#rtm-events)
+  * [Examples](#examples)
+- [LICENSE](#license)
+
+<!-- tocstop -->
 
 ## Install
 
