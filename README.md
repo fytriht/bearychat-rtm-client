@@ -66,7 +66,7 @@ client.on(RTMClientEvents.ONLINE, function() {
 });
 
 client.on(RTMClientEvents.OFFLINE, function() {
-  console.log('RTM online');
+  console.log('RTM offline');
 });
 
 client.on(RTMClientEvents.MESSAGE, function(message) {
@@ -103,7 +103,7 @@ client.on(RTMClientEvents.ONLINE, function() {
 });
 
 client.on(RTMClientEvents.OFFLINE, function() {
-  console.log('RTM online');
+  console.log('RTM offline');
 });
 
 client.on(RTMClientEvents.MESSAGE, function(message) {
