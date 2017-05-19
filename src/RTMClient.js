@@ -99,19 +99,17 @@ export default class RTMClient extends EventEmitter {
   }
 
   connect() {
-    if (process.env.NODE_ENV !== 'production') {
-      invariant(
-        this._state === RTMClientState.INITIAL ||
-        this._state === RTMClientState.CLOSED ||
-        this._state === RTMClientState.RECONNECT,
-        'Invalid state: connect() should always be called when current state ' +
-        'is "%s", "%s" or "%s" but the current state is "%s".',
-        RTMClientState.INITIAL,
-        RTMClientState.CLOSED,
-        RTMClientState.RECONNECT,
-        this._state
-      );
-    }
+    invariant(
+      this._state === RTMClientState.INITIAL ||
+      this._state === RTMClientState.CLOSED ||
+      this._state === RTMClientState.RECONNECT,
+      'Invalid state: connect() should always be called when current state ' +
+      'is "%s", "%s" or "%s" but the current state is "%s".',
+      RTMClientState.INITIAL,
+      RTMClientState.CLOSED,
+      RTMClientState.RECONNECT,
+      this._state
+    );
 
     this._doConnect();
   }
