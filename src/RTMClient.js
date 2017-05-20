@@ -82,7 +82,10 @@ export default class RTMClient extends EventEmitter {
 
     this._url = url;
     this.WebSocket = WebSocket;
+
+    // following options are internal to speed up testing.
     this._pingInterval = options.pingInterval || 5000;
+    this._backoffMultiplier = options.backoffMultiplier || 1000;
 
     this._connectionEvents = [
       [RTMConnectionEvents.OPEN, this._handleConnectionOpen],
@@ -137,7 +140,7 @@ export default class RTMClient extends EventEmitter {
 
   async _reconnect() {
     this._state = RTMClientState.RECONNECT;
-    await delay(generateInterval(this._reconnectAttempts));
+    await delay(generateInterval(this._reconnectAttempts, this._backoffMultiplier));
     this._reconnectAttempts++;
     this.connect();
   }
@@ -182,7 +185,9 @@ export default class RTMClient extends EventEmitter {
 
     const sendPromise = this._send(message);
     const timeoutPromise = timeoutDelay(timeout, message);
-    return Promise.race([sendPromise, timeoutPromise]);
+    const sendResult = await Promise.race([sendPromise, timeoutPromise]);
+    timeoutPromise.cancel();
+    return sendResult;
   }
 
   _handleConnectionOpen = () => {
@@ -250,12 +255,12 @@ export default class RTMClient extends EventEmitter {
 }
 
 // exponential backoff, 30 seconds max
-function generateInterval(attempts) {
-  const maxInterval = Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
+function generateInterval(attempts, multiplier = 1000) {
+  const maxInterval = Math.min(30, (Math.pow(2, attempts) - 1)) * multiplier;
   return Math.random() * maxInterval;
 }
 
 async function timeoutDelay(timeout, message) {
-  await delay(timeout);
-  throw new RTMTimeoutError('RTM message send timeout.', message);
+  return await delay.reject(timeout,
+    new RTMTimeoutError('RTM message send timeout.', message));
 }

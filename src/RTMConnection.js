@@ -134,8 +134,4 @@ export default class RTMConnection extends EventEmitter {
     this._state = RTMConnectionState.CLOSING;
     this._ws.close();
   }
-
-  getState() {
-    return this._state;
-  }
 }
