@@ -11,20 +11,20 @@ const BACKOFF_MULTIPLIER = 100;
 const mockUrl = 'ws://rtm.local.bearychat.com/nimbus/ws:fake-token';
 let mockServer = null;
 
-function createReplyMessage(options) {
-  return JSON.stringify({
-    code: 0,
-    status: 'ok',
-    ts: Date.now(),
-    type: RTMMessageTypes.REPLY,
-    ...options
-  });
-}
-
 function setupServer() {
   mockServer = new Server(mockUrl);
 
   mockServer.on('connection', server => {
+
+    // send self connection
+    server.send(JSON.stringify({
+      data: {
+        connection: 'connected',
+        uid: '=bw52O'
+      },
+      '': Date.now(),
+      type: 'update_user_connection'
+    }));
 
     let timeoutId;
     const clearServerTimeout = () => {
@@ -47,13 +47,28 @@ function setupServer() {
 
       message = JSON.parse(message);
 
-      switch (message.type) {
-        case RTMMessageTypes.PING:
-          mockServer.send(createReplyMessage({
-            call_id: message.call_id
-          }));
-          break;
-        default:
+      server.send(JSON.stringify({
+        code: 0,
+        status: 'ok',
+        ts: Date.now(),
+        type: RTMMessageTypes.REPLY,
+        call_id: message.call_id
+      }));
+
+      // send deprecated messages to ensure client filters them
+      if (message.type === RTMMessageTypes.PING) {
+        server.send(JSON.stringify({
+          reply_to: message.call_id,
+          ts: Date.now(),
+          type: RTMMessageTypes.PONG
+        }));
+      } else {
+        server.send(JSON.stringify({
+          reply_to: message.call_id,
+          text: 'hi',
+          ts: Date.now(),
+          type: RTMMessageTypes.OK
+        }));
       }
     });
   });
@@ -68,67 +83,88 @@ beforeEach(setupServer);
 
 afterEach(stopServer);
 
-test('server disconnects without heartbeat', () => {
-  return new Promise(async (resolve, reject) => {
-    const ws = new WebSocket(mockUrl);
+test('server disconnects without heartbeat', async () => {
+  const ws = new WebSocket(mockUrl);
 
-    ws.onerror = reject;
-    ws.onclose = resolve;
+  const errorHandler = jest.fn();
+  const closeHandler = jest.fn();
 
-    ws.send(JSON.stringify({
-      call_id: 1,
-      type: RTMMessageTypes.PING
-    }));
+  ws.onerror = errorHandler;
+  ws.onclose = closeHandler;
 
-    await delay(WAIT_SERVER_CLOSE_TIMEOUT);
-    reject(new Error('Server should have closed.'));
-  });
+  ws.send(JSON.stringify({
+    call_id: 1,
+    type: RTMMessageTypes.PING
+  }));
+
+  await delay(100);
+  expect(closeHandler).not.toBeCalled();
+
+  await delay(WAIT_SERVER_CLOSE_TIMEOUT);
+
+  expect(errorHandler).not.toBeCalled();
+  expect(closeHandler.mock.calls.length).toBe(1);
 });
 
-test('keep alive', () => {
-  return new Promise(async (resolve, reject) => {
-    const client = new RTMClient({
-      url: mockUrl,
-      WebSocket,
-      pingInterval: CLIENT_PING_INTERVAL
-    });
-
-    client.on(RTMClientEvents.ERROR, reject);
-    client.on(RTMClientEvents.CLOSE, resolve);
-
-    await delay(KEEP_ALIVE_TIMEOUT);
-
-    client.close();
+test('keep alive', async () => {
+  const client = new RTMClient({
+    url: mockUrl,
+    WebSocket,
+    pingInterval: CLIENT_PING_INTERVAL
   });
+
+  const errorHandler = jest.fn();
+  const closeHandler = jest.fn();
+  const onlineHandler = jest.fn();
+  const offlineHandler = jest.fn();
+  const eventHandler = jest.fn();
+
+  client.on(RTMClientEvents.ERROR, errorHandler);
+  client.on(RTMClientEvents.CLOSE, closeHandler);
+  client.on(RTMClientEvents.ONLINE, onlineHandler);
+  client.on(RTMClientEvents.OFFLINE, offlineHandler);
+  client.on(RTMClientEvents.EVENT, eventHandler);
+
+  expect(offlineHandler).not.toBeCalled();
+  expect(closeHandler).not.toBeCalled();
+  expect(eventHandler).not.toBeCalled();
+
+  await delay(KEEP_ALIVE_TIMEOUT);
+
+  client.close();
+
+  expect(errorHandler).not.toBeCalled();
+  expect(onlineHandler.mock.calls.length).toBe(1);
+  expect(offlineHandler.mock.calls.length).toBe(1);
+  expect(closeHandler.mock.calls.length).toBe(1);
+  expect(eventHandler.mock.calls.length).toBe(1);
 });
 
-test('reconnect', () => {
-  return new Promise(async (resolve, reject) => {
-    const client = new RTMClient({
-      url: mockUrl,
-      WebSocket,
-      pingInterval: CLIENT_PING_INTERVAL,
-      backoffMultiplier: BACKOFF_MULTIPLIER
-    });
-
-    const onlineHandler = jest.fn(async () => {
-      // stop server then restart later
-      mockServer.close();
-      stopServer();
-      setupServer();
-      await delay(100);
-    });
-
-    const offlineHandler = jest.fn();
-
-    client.on(RTMClientEvents.ONLINE, onlineHandler);
-    client.on(RTMClientEvents.OFFLINE, offlineHandler);
-
-    await delay(3000);
-
-    expect(onlineHandler.mock.calls.length).toBeGreaterThan(1);
-    expect(offlineHandler.mock.calls.length).toBeGreaterThan(1);
-
-    resolve();
+test('reconnect', async () => {
+  const client = new RTMClient({
+    url: mockUrl,
+    WebSocket,
+    pingInterval: CLIENT_PING_INTERVAL,
+    backoffMultiplier: BACKOFF_MULTIPLIER
   });
+
+  const onlineHandler = jest.fn(async () => {
+    // stop server then restart later
+    mockServer.close();
+    stopServer();
+    setupServer();
+    await delay(100);
+  });
+  const offlineHandler = jest.fn();
+
+  client.on(RTMClientEvents.ONLINE, onlineHandler);
+  client.on(RTMClientEvents.OFFLINE, offlineHandler);
+
+  expect(onlineHandler).not.toBeCalled();
+  expect(offlineHandler).not.toBeCalled();
+
+  await delay(3000);
+
+  expect(onlineHandler.mock.calls.length).toBeGreaterThan(1);
+  expect(offlineHandler.mock.calls.length).toBeGreaterThan(1);
 });
