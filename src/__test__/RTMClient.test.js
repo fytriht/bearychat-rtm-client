@@ -2,6 +2,10 @@ import RTMClient, { RTMClientEvents, RTMMessageTypes } from "../";
 import { Server, WebSocket } from "mock-socket";
 import delay from "delay";
 
+process.on('unhandledRejection', (reason) => {
+  throw reason;
+});
+
 const SERVER_TIMEOUT = 200;
 const CLIENT_PING_INTERVAL = 100;
 const WAIT_SERVER_CLOSE_TIMEOUT = 1000;
