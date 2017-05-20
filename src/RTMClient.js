@@ -82,6 +82,7 @@ export default class RTMClient extends EventEmitter {
 
     this._url = url;
     this.WebSocket = WebSocket;
+    this._pingInterval = options.pingInterval || 5000;
 
     this._connectionEvents = [
       [RTMConnectionEvents.OPEN, this._handleConnectionOpen],
@@ -129,7 +130,8 @@ export default class RTMClient extends EventEmitter {
     this._reconnectAttempts = 1;
     this._setConnection(new RTMConnection({
       url: wsUrl,
-      WebSocket: this.WebSocket
+      WebSocket: this.WebSocket,
+      pingInterval: this._pingInterval
     }));
   };
 

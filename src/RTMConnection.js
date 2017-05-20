@@ -32,8 +32,9 @@ export default class RTMConnection extends EventEmitter {
 
   state = {};
 
-  constructor({ url, WebSocket }) {
+  constructor({ url, WebSocket, pingInterval }) {
     super();
+    this._pingInterval = pingInterval;
     this._currentCallId = 0;
     this._state = RTMConnectionState.INITIAL;
     this._ws = new WebSocket(url);
@@ -125,7 +126,7 @@ export default class RTMConnection extends EventEmitter {
   _startLoop = async () => {
     while (this._state === RTMConnectionState.CONNECTED) {
       this._ping();
-      await delay(5000);
+      await delay(this._pingInterval);
     }
   };
 
