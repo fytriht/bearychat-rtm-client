@@ -86,7 +86,7 @@ export default class RTMConnection extends EventEmitter {
 
     const callback = callbackMap.get(callId);
     callbackMap.delete(callId);
-    callback(message);
+    callback && callback(message);
   }
 
   _handleError = (error) => {
