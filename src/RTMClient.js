@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import warning from 'warning';
 import invariant from 'invariant';
 import delay from 'delay';
 import RTMClientEvents from './RTMClientEvents';
@@ -60,12 +59,12 @@ export default class RTMClient extends EventEmitter {
     options = options || {};
     const { url } = options;
 
-    warning(
+    invariant(
       url,
       '"url" is required.'
     );
 
-    warning(
+    invariant(
       typeof url === 'string' || typeof url === 'function',
       '"url" must be a string or a function returning a string.'
     );

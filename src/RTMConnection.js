@@ -3,7 +3,7 @@ import RTMConnectionState from './RTMConnectionState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMMessageTypes from './RTMMessageTypes';
 import delay from 'delay';
-import warning from 'warning';
+import invariant from 'invariant';
 
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
@@ -76,11 +76,13 @@ export default class RTMConnection extends EventEmitter {
     const callbackMap = this._callbackMap;
     const callId = message.call_id;
 
-    warning(
-      callbackMap.has(callId),
-      'Call id replied without sending: %s',
-      callId
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(
+        callbackMap.has(callId),
+        'Call id replied without sending: %s',
+        callId
+      );
+    }
 
     const callback = callbackMap.get(callId);
     callbackMap.delete(callId);
@@ -105,7 +107,8 @@ export default class RTMConnection extends EventEmitter {
 
     const callIdMap = this._callbackMap;
     const callId = message.call_id;
-    warning(
+
+    invariant(
       !callIdMap.has(callId),
       'Duplicate call id %s',
       callId
