@@ -1,6 +1,6 @@
-import RTMClient, { RTMClientEvents, RTMMessageTypes } from '../';
-import { WebSocket, Server } from 'mock-socket';
-import delay from 'delay';
+import RTMClient, { RTMClientEvents, RTMMessageTypes } from "../";
+import { Server, WebSocket } from "mock-socket";
+import delay from "delay";
 
 const SERVER_TIMEOUT = 200;
 const CLIENT_PING_INTERVAL = 100;
@@ -197,6 +197,10 @@ test('send message', () => {
       expect(reply2.status).toBe('ok');
       expect(reply2.call_id).toBe(65533);
 
+      const reply3 = await client.send({}, 50);
+      expect(reply3.type).toBe('reply');
+      expect(reply3.status).toBe('ok');
+
       try {
         await client.send({}, 10);
       } catch (e) {
@@ -214,5 +218,54 @@ test('send message', () => {
 
     client.on(RTMClientEvents.ONLINE, onlineHandler);
     client.on(RTMClientEvents.CLOSE, closeHandler);
+  });
+});
+
+test('url param resolve', () => {
+  return new Promise((resolve) => {
+    const client = new RTMClient({
+      url() {
+        return Promise.resolve(mockUrl)
+      },
+      WebSocket,
+      pingInterval: CLIENT_PING_INTERVAL
+    });
+
+    const onlineHandler = jest.fn(() => {
+      client.close();
+    });
+    const errorHandler = jest.fn();
+
+    client.on(RTMClientEvents.ONLINE, onlineHandler);
+    client.on(RTMClientEvents.ERROR, errorHandler);
+    client.on(RTMClientEvents.CLOSE, () => {
+      expect(onlineHandler).toBeCalled();
+      expect(errorHandler).not.toBeCalled();
+      resolve();
+    });
+  });
+});
+
+test('url param reject', () => {
+  return new Promise((resolve) => {
+    const client = new RTMClient({
+      url() {
+        return Promise.reject()
+      },
+      pingInterval: CLIENT_PING_INTERVAL
+    });
+
+    const onlineHandler = jest.fn();
+    const errorHandler = jest.fn(() => {
+      client.close();
+    });
+
+    client.on(RTMClientEvents.ONLINE, onlineHandler);
+    client.on(RTMClientEvents.ERROR, errorHandler);
+    client.on(RTMClientEvents.CLOSE, () => {
+      expect(onlineHandler).not.toBeCalled();
+      expect(errorHandler).toBeCalled();
+      resolve();
+    });
   });
 });

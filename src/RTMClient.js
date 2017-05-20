@@ -161,6 +161,9 @@ export default class RTMClient extends EventEmitter {
       this._state = RTMClientState.CLOSING;
       this._forceClose = true;
       this._connection.close();
+    } else if (this._state !== RTMClientState.CLOSED) {
+      this._state = RTMClientState.CLOSED;
+      this.emit(RTMClientEvents.CLOSE);
     }
   }
 
@@ -184,7 +187,10 @@ export default class RTMClient extends EventEmitter {
     }
 
     const sendPromise = this._send(message);
-    const timeoutPromise = timeoutDelay(timeout, message);
+    const timeoutPromise = delay.reject(
+      timeout,
+      new RTMTimeoutError('RTM message send timeout.', message)
+    );
     const sendResult = await Promise.race([sendPromise, timeoutPromise]);
     timeoutPromise.cancel();
     return sendResult;
@@ -258,9 +264,4 @@ export default class RTMClient extends EventEmitter {
 function generateInterval(attempts, multiplier = 1000) {
   const maxInterval = Math.min(30, (Math.pow(2, attempts) - 1)) * multiplier;
   return Math.random() * maxInterval;
-}
-
-async function timeoutDelay(timeout, message) {
-  return await delay.reject(timeout,
-    new RTMTimeoutError('RTM message send timeout.', message));
 }
