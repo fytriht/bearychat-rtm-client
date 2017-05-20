@@ -42,10 +42,12 @@ function setupServer() {
 
     resetServerTimeout();
 
-    server.on('message', message => {
+    server.on('message', async (message) => {
       resetServerTimeout();
 
       message = JSON.parse(message);
+
+      await delay(20);
 
       server.send(JSON.stringify({
         code: 0,
@@ -167,4 +169,50 @@ test('reconnect', async () => {
 
   expect(onlineHandler.mock.calls.length).toBeGreaterThan(1);
   expect(offlineHandler.mock.calls.length).toBeGreaterThan(1);
+});
+
+test('send message', () => {
+  return new Promise(async (resolve) => {
+    const client = new RTMClient({
+      url: mockUrl,
+      WebSocket,
+      pingInterval: CLIENT_PING_INTERVAL
+    });
+
+    try {
+      await client.send({});
+    } catch (e) {
+      expect(e.message).toMatch('not connected');
+    }
+
+    const onlineHandler = jest.fn(async () => {
+      const reply = await client.send({});
+      expect(reply.type).toBe('reply');
+      expect(reply.status).toBe('ok');
+
+      const reply2 = await client.send({
+        call_id: 65533
+      });
+      expect(reply2.type).toBe('reply');
+      expect(reply2.status).toBe('ok');
+      expect(reply2.call_id).toBe(65533);
+
+      try {
+        await client.send({}, 10);
+      } catch (e) {
+        expect(e.message).toMatch('timeout');
+      }
+
+      client.close();
+    });
+
+    const closeHandler = jest.fn(() => {
+      expect(closeHandler.mock.calls.length).toBe(1);
+      expect(onlineHandler.mock.calls.length).toBe(1);
+      resolve();
+    });
+
+    client.on(RTMClientEvents.ONLINE, onlineHandler);
+    client.on(RTMClientEvents.CLOSE, closeHandler);
+  });
 });
