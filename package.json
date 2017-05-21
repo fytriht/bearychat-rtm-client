@@ -40,6 +40,13 @@
     "collectCoverage": true,
     "coverageReporters": [
       "text"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "__test__"
+    ],
+    "setupFiles": [
+      "./src/__test__/prepare.js"
     ]
   }
 }
