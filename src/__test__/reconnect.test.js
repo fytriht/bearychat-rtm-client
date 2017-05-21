@@ -1,6 +1,5 @@
 import RTMClient, { RTMClientEvents } from "../";
 import { WebSocket } from "mock-socket";
-import createMockServer, { CLIENT_PING_INTERVAL, BACKOFF_MULTIPLIER } from './createMockServer';
 import delay from "delay";
 
 let server, url;

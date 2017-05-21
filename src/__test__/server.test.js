@@ -1,5 +1,4 @@
 import { RTMMessageTypes } from "../";
-import createMockServer from './createMockServer';
 import { WebSocket } from "mock-socket";
 import delay from "delay";
 

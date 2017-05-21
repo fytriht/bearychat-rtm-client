@@ -1,6 +1,5 @@
 import RTMClient, { RTMClientEvents } from "../";
 import { WebSocket } from "mock-socket";
-import createMockServer, { CLIENT_PING_INTERVAL } from './createMockServer';
 import delay from "delay";
 
 const KEEP_ALIVE_TIMEOUT = 2000;
