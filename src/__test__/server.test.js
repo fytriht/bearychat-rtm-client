@@ -6,14 +6,14 @@ const WAIT_SERVER_CLOSE_TIMEOUT = 1000;
 
 let server, url;
 
-beforeEach(() => {
-  const result = createMockServer();
+beforeEach(async () => {
+  const result = await createMockServer();
   server = result.server;
   url = result.url;
 });
 
-afterEach(() => {
-  server.stop();
+afterEach(done => {
+  server.stop(done);
 });
 
 test('server disconnects without heartbeat', async () => {

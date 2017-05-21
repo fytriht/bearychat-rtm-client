@@ -6,14 +6,14 @@ const KEEP_ALIVE_TIMEOUT = 2000;
 
 let server, url;
 
-beforeEach(() => {
-  const result = createMockServer();
+beforeEach(async () => {
+  const result = await createMockServer();
   server = result.server;
   url = result.url;
 });
 
-afterEach(() => {
-  server.stop();
+afterEach(done => {
+  server.stop(done);
 });
 
 test('keep alive', async () => {

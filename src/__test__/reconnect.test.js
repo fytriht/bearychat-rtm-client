@@ -4,14 +4,14 @@ import delay from "delay";
 
 let server, url;
 
-beforeEach(() => {
-  const result = createMockServer();
+beforeEach(async () => {
+  const result = await createMockServer();
   server = result.server;
   url = result.url;
 });
 
-afterEach(() => {
-  server.stop();
+afterEach(done => {
+  server.stop(done);
 });
 
 test('reconnect', async () => {
@@ -25,7 +25,7 @@ test('reconnect', async () => {
   const onlineHandler = jest.fn(async () => {
     // stop server then restart later
     server.close();
-    const result = createMockServer();
+    const result = await createMockServer();
     server = result.server;
     url = result.url;
     await delay(100);

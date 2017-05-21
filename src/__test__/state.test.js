@@ -4,14 +4,14 @@ import delay from "delay";
 
 let server, url;
 
-beforeEach(() => {
-  const result = createMockServer();
+beforeEach(async () => {
+  const result = await createMockServer();
   server = result.server;
   url = result.url;
 });
 
-afterEach(() => {
-  server.stop();
+afterEach(done => {
+  server.stop(done);
 });
 
 test('state', () => {
@@ -28,7 +28,7 @@ test('state', () => {
         expect(client.getState()).toBe(RTMClientState.CONNECTED);
         await delay(100);
         server.close();
-        const result = createMockServer();
+        const result = await createMockServer();
         server = result.server;
         url = result.url;
       })

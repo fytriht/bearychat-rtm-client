@@ -13,7 +13,7 @@ function generateMockUrl() {
   return 'ws://rtm.local.bearychat.com/nimbus/ws:fake-token' + (urlCounter++);
 }
 
-export default function createMockServer() {
+export default async function createMockServer() {
   const mockUrl = generateMockUrl();
   const mockServer = new Server(mockUrl);
 

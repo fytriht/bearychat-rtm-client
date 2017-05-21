@@ -3,14 +3,14 @@ import { WebSocket } from "mock-socket";
 
 let server, url;
 
-beforeEach(() => {
-  const result = createMockServer();
+beforeEach(async () => {
+  const result = await createMockServer();
   server = result.server;
   url = result.url;
 });
 
-afterEach(() => {
-  server.stop();
+afterEach(done => {
+  server.stop(done);
 });
 
 describe('url param', () => {
