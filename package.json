@@ -41,6 +41,9 @@
     "coverageReporters": [
       "text"
     ],
+    "collectCoverageFrom": [
+      "src/*.js"
+    ],
     "coveragePathIgnorePatterns": [
       "/node_modules/",
       "__test__"
