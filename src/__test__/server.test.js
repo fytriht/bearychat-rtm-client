@@ -12,8 +12,10 @@ beforeEach(async () => {
   url = result.url;
 });
 
-afterEach(done => {
-  server.stop(done);
+afterEach(() => {
+  return new Promise((resolve) => {
+    server.stop(resolve);
+  });
 });
 
 test('server disconnects without heartbeat', async () => {
