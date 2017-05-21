@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+- node
+- '7'
+- '6'
+- '4'
+script:
+- travis_retry npm test
+notifications:
+  webhooks:
+    secure: aWbjM/ABV3QHMsa25wRGxL7iElrwLKVM46Je3aqGWZ2ETVidRcuXJDYims47gAflc6a64JMdk7NdhuqVzVDdPr8MPanW7qwsfMi6f1wjJMj+YQHzIp/+mZgJeAFxyng9uPFSyUKxwgcJxqBB9ofrNZO9yG53IbJcgy2c3i8HXBUJ9ifFiGw0wCBLuPqpKsB5zqjA31Qb0XFyyO7AFVpUTOHsXGh7fN0pmXh/uDwVnkhg+Hjk6juHndh7rHSHm8QvZVOvjcfQgQsQN7oMqKwfWeoamUwGu0hdxs/rQjSyRUW9YJX0vQw2M7bOKhgIM2JjxbVASNg1qOVYOnd8xvGmOvzaiDgo4yyOVIwkxSYWxCJr9/OC07HJGncuYjfZZYoveZcGeFcvgYgd3XzzXGLcMe3A+M5YPF+DK0C28W+8ZKn3zKBDKqXAt8zBI40kZneyfZPc579HycM7Q+CvWf0RoNiuH7xD1fyfPovZccPTNTdVY2weZV6AnNXgmOs1RJVaysIwlV7FfFbZpYeXY6lzWvb/uiaOo3JFTZi4k7CtIGQXpnSRJFBLimXsKB/s8t7Dv/d+9boIwj2poApDSfQ7Cu8OTYkjR5Qm09pm9WRSYhx5C+VGBlhcaPGQKStlowVnQFPP6Lq+WmMHqxJf0tZl3A2iA9qwnaNUuF2w6h9cGB8=
