@@ -3,6 +3,7 @@
 Compatible with Node.js, Webpack and Browserify.
 
 [![@BearyChat](http://openapi.beary.chat/badge.svg)](http://openapi.beary.chat/join)
+[![Build Status](https://travis-ci.org/bearyinnovative/bearychat.js.svg)](https://travis-ci.org/bearyinnovative/bearychat-rtm-client)
 [![npm version](https://badge.fury.io/js/bearychat-rtm-client.svg)](https://npmjs.com/package/bearychat-rtm-client)
 
 <!-- toc -->

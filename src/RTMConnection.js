@@ -3,7 +3,7 @@ import RTMConnectionState from './RTMConnectionState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMMessageTypes from './RTMMessageTypes';
 import delay from 'delay';
-import warning from 'warning';
+import invariant from 'invariant';
 
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
@@ -32,8 +32,9 @@ export default class RTMConnection extends EventEmitter {
 
   state = {};
 
-  constructor({ url, WebSocket }) {
+  constructor({ url, WebSocket, pingInterval }) {
     super();
+    this._pingInterval = pingInterval;
     this._currentCallId = 0;
     this._state = RTMConnectionState.INITIAL;
     this._ws = new WebSocket(url);
@@ -75,15 +76,17 @@ export default class RTMConnection extends EventEmitter {
     const callbackMap = this._callbackMap;
     const callId = message.call_id;
 
-    warning(
-      callbackMap.has(callId),
-      'Call id replied without sending: %s',
-      callId
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(
+        callbackMap.has(callId),
+        'Call id replied without sending: %s',
+        callId
+      );
+    }
 
     const callback = callbackMap.get(callId);
     callbackMap.delete(callId);
-    callback(message);
+    callback && callback(message);
   }
 
   _handleError = (error) => {
@@ -104,7 +107,8 @@ export default class RTMConnection extends EventEmitter {
 
     const callIdMap = this._callbackMap;
     const callId = message.call_id;
-    warning(
+
+    invariant(
       !callIdMap.has(callId),
       'Duplicate call id %s',
       callId
@@ -125,16 +129,12 @@ export default class RTMConnection extends EventEmitter {
   _startLoop = async () => {
     while (this._state === RTMConnectionState.CONNECTED) {
       this._ping();
-      await delay(5000);
+      await delay(this._pingInterval);
     }
   };
 
   close() {
     this._state = RTMConnectionState.CLOSING;
     this._ws.close();
-  }
-
-  getState() {
-    return this._state;
   }
 }

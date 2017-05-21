@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import warning from 'warning';
 import invariant from 'invariant';
 import delay from 'delay';
 import RTMClientEvents from './RTMClientEvents';
@@ -60,12 +59,12 @@ export default class RTMClient extends EventEmitter {
     options = options || {};
     const { url } = options;
 
-    warning(
+    invariant(
       url,
       '"url" is required.'
     );
 
-    warning(
+    invariant(
       typeof url === 'string' || typeof url === 'function',
       '"url" must be a string or a function returning a string.'
     );
@@ -82,6 +81,10 @@ export default class RTMClient extends EventEmitter {
 
     this._url = url;
     this.WebSocket = WebSocket;
+
+    // following options are internal to speed up testing.
+    this._pingInterval = options.pingInterval || 5000;
+    this._backoffMultiplier = options.backoffMultiplier || 1000;
 
     this._connectionEvents = [
       [RTMConnectionEvents.OPEN, this._handleConnectionOpen],
@@ -129,13 +132,14 @@ export default class RTMClient extends EventEmitter {
     this._reconnectAttempts = 1;
     this._setConnection(new RTMConnection({
       url: wsUrl,
-      WebSocket: this.WebSocket
+      WebSocket: this.WebSocket,
+      pingInterval: this._pingInterval
     }));
   };
 
   async _reconnect() {
     this._state = RTMClientState.RECONNECT;
-    await delay(generateInterval(this._reconnectAttempts));
+    await delay(generateInterval(this._reconnectAttempts, this._backoffMultiplier));
     this._reconnectAttempts++;
     this.connect();
   }
@@ -156,6 +160,9 @@ export default class RTMClient extends EventEmitter {
       this._state = RTMClientState.CLOSING;
       this._forceClose = true;
       this._connection.close();
+    } else if (this._state !== RTMClientState.CLOSED) {
+      this._state = RTMClientState.CLOSED;
+      this.emit(RTMClientEvents.CLOSE);
     }
   }
 
@@ -179,8 +186,13 @@ export default class RTMClient extends EventEmitter {
     }
 
     const sendPromise = this._send(message);
-    const timeoutPromise = timeoutDelay(timeout, message);
-    return Promise.race([sendPromise, timeoutPromise]);
+    const timeoutPromise = delay.reject(
+      timeout,
+      new RTMTimeoutError('RTM message send timeout.', message)
+    );
+    const sendResult = await Promise.race([sendPromise, timeoutPromise]);
+    timeoutPromise.cancel();
+    return sendResult;
   }
 
   _handleConnectionOpen = () => {
@@ -190,15 +202,16 @@ export default class RTMClient extends EventEmitter {
 
   _handleConnectionClose = () => {
     this._removeConnection();
-    this.emit(RTMClientEvents.OFFLINE);
     if (this._forceClose) {
       // client close, close normally
       this._state = RTMClientState.CLOSED;
+      this.emit(RTMClientEvents.OFFLINE);
       this.emit(RTMClientEvents.CLOSE);
       this._forceClose = false;
     } else {
       // server close or error, re-connect
       this._reconnect();
+      this.emit(RTMClientEvents.OFFLINE);
     }
   };
 
@@ -248,12 +261,7 @@ export default class RTMClient extends EventEmitter {
 }
 
 // exponential backoff, 30 seconds max
-function generateInterval(attempts) {
-  const maxInterval = Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
+function generateInterval(attempts, multiplier = 1000) {
+  const maxInterval = Math.min(30, (Math.pow(2, attempts) - 1)) * multiplier;
   return Math.random() * maxInterval;
-}
-
-async function timeoutDelay(timeout, message) {
-  await delay(timeout);
-  throw new RTMTimeoutError('RTM message send timeout.', message);
 }
