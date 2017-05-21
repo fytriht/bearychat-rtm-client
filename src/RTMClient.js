@@ -202,15 +202,16 @@ export default class RTMClient extends EventEmitter {
 
   _handleConnectionClose = () => {
     this._removeConnection();
-    this.emit(RTMClientEvents.OFFLINE);
     if (this._forceClose) {
       // client close, close normally
       this._state = RTMClientState.CLOSED;
+      this.emit(RTMClientEvents.OFFLINE);
       this.emit(RTMClientEvents.CLOSE);
       this._forceClose = false;
     } else {
       // server close or error, re-connect
       this._reconnect();
+      this.emit(RTMClientEvents.OFFLINE);
     }
   };
 

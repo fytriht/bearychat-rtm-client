@@ -1,4 +1,4 @@
-import RTMClient, { RTMClientEvents, RTMMessageTypes } from "../";
+import RTMClient, { RTMClientEvents, RTMMessageTypes, RTMClientState } from "../";
 import { Server, WebSocket } from "mock-socket";
 import delay from "delay";
 
@@ -18,7 +18,9 @@ let mockServer = null;
 function setupServer() {
   mockServer = new Server(mockUrl);
 
-  mockServer.on('connection', server => {
+  mockServer.on('connection', async (server) => {
+
+    await delay(5);
 
     // send self connection
     server.send(JSON.stringify({
@@ -80,9 +82,11 @@ function setupServer() {
   });
 }
 
-function stopServer() {
-  mockServer.stop();
-  mockServer = null;
+function stopServer(callback) {
+  mockServer.stop(() => {
+    mockServer = null;
+    callback && callback();
+  });
 }
 
 beforeEach(setupServer);
@@ -239,14 +243,16 @@ test('url param resolve', () => {
       client.close();
     });
     const errorHandler = jest.fn();
+    const closeHandler = jest.fn(() => {
+      expect(onlineHandler).toBeCalled();
+      expect(errorHandler).not.toBeCalled();
+      expect(closeHandler).toBeCalled();
+      resolve();
+    });
 
     client.on(RTMClientEvents.ONLINE, onlineHandler);
     client.on(RTMClientEvents.ERROR, errorHandler);
-    client.on(RTMClientEvents.CLOSE, () => {
-      expect(onlineHandler).toBeCalled();
-      expect(errorHandler).not.toBeCalled();
-      resolve();
-    });
+    client.on(RTMClientEvents.CLOSE, closeHandler);
   });
 });
 
@@ -263,13 +269,66 @@ test('url param reject', () => {
     const errorHandler = jest.fn(() => {
       client.close();
     });
+    const closeHandler = jest.fn(() => {
+      expect(onlineHandler).not.toBeCalled();
+      expect(errorHandler).toBeCalled();
+      expect(closeHandler).toBeCalled();
+      resolve();
+    });
 
     client.on(RTMClientEvents.ONLINE, onlineHandler);
     client.on(RTMClientEvents.ERROR, errorHandler);
-    client.on(RTMClientEvents.CLOSE, () => {
-      expect(onlineHandler).not.toBeCalled();
-      expect(errorHandler).toBeCalled();
+    client.on(RTMClientEvents.CLOSE, closeHandler);
+  });
+});
+
+test('state', () => {
+  return new Promise((resolve) => {
+    const client = new RTMClient({
+      url: mockUrl,
+      WebSocket,
+      pingInterval: CLIENT_PING_INTERVAL,
+      backoffMultiplier: BACKOFF_MULTIPLIER
+    });
+
+    const onlineHandler = jest.fn()
+      .mockImplementationOnce(async () => {
+        expect(client.getState()).toBe(RTMClientState.CONNECTED);
+        await delay(100);
+        mockServer.close();
+        stopServer();
+        setupServer();
+      })
+      .mockImplementation(() => {
+        client.close();
+      });
+
+    const offlineHandler = jest.fn()
+      .mockImplementationOnce(() => {
+        expect(client.getState()).toBe(RTMClientState.RECONNECT);
+      })
+      .mockImplementation(() => {
+        expect(client.getState()).toBe(RTMClientState.CLOSED);
+      });
+
+    const eventHandler = jest.fn(() => {
+      expect(client.getState()).toBe(RTMClientState.CONNECTED);
+    });
+
+    const closeHandler = jest.fn(() => {
+      expect(client.getState()).toBe(RTMClientState.CLOSED);
+
+      expect(onlineHandler.mock.calls.length).toBe(2);
+      expect(closeHandler.mock.calls.length).toBe(1);
+      expect(offlineHandler.mock.calls.length).toBe(2);
+      expect(eventHandler).toBeCalled();
+
       resolve();
     });
+
+    client.on(RTMClientEvents.ONLINE, onlineHandler);
+    client.on(RTMClientEvents.OFFLINE, offlineHandler);
+    client.on(RTMClientEvents.CLOSE, closeHandler);
+    client.on(RTMClientEvents.EVENT, eventHandler);
   });
 });
