@@ -12,25 +12,31 @@ const WAIT_SERVER_CLOSE_TIMEOUT = 1000;
 const KEEP_ALIVE_TIMEOUT = 2000;
 const BACKOFF_MULTIPLIER = 100;
 
-const mockUrl = 'ws://rtm.local.bearychat.com/nimbus/ws:fake-token';
+let mockUrl = null;
 let mockServer = null;
+let urlCounter = 0;
+
+function generateMockUrl() {
+  return 'ws://rtm.local.bearychat.com/nimbus/ws:fake-token' + (urlCounter++);
+}
 
 function setupServer() {
+  mockUrl = generateMockUrl();
   mockServer = new Server(mockUrl);
 
-  mockServer.on('connection', async (server) => {
+  mockServer.on('connection', (server) => {
 
-    await delay(5);
-
-    // send self connection
-    server.send(JSON.stringify({
-      data: {
-        connection: 'connected',
-        uid: '=bw52O'
-      },
-      '': Date.now(),
-      type: 'update_user_connection'
-    }));
+    setTimeout(() => {
+      // send self connection
+      server.send(JSON.stringify({
+        data: {
+          connection: 'connected',
+          uid: '=bw52O'
+        },
+        '': Date.now(),
+        type: 'update_user_connection'
+      }));
+    }, 5);
 
     let timeoutId;
     const clearServerTimeout = () => {
@@ -85,6 +91,7 @@ function setupServer() {
 function stopServer(callback) {
   mockServer.stop(() => {
     mockServer = null;
+    mockUrl = null;
     callback && callback();
   });
 }
@@ -118,7 +125,7 @@ test('server disconnects without heartbeat', async () => {
 
 test('keep alive', async () => {
   const client = new RTMClient({
-    url: mockUrl,
+    url: () => mockUrl,
     WebSocket,
     pingInterval: CLIENT_PING_INTERVAL
   });
@@ -152,7 +159,7 @@ test('keep alive', async () => {
 
 test('reconnect', async () => {
   const client = new RTMClient({
-    url: mockUrl,
+    url: () => mockUrl,
     WebSocket,
     pingInterval: CLIENT_PING_INTERVAL,
     backoffMultiplier: BACKOFF_MULTIPLIER
@@ -182,35 +189,42 @@ test('reconnect', async () => {
 test('send message', () => {
   return new Promise(async (resolve) => {
     const client = new RTMClient({
-      url: mockUrl,
+      url: () => mockUrl,
       WebSocket,
       pingInterval: CLIENT_PING_INTERVAL
     });
 
     try {
-      await client.send({});
+      await client.send({
+        padding: 1
+      });
     } catch (e) {
       expect(e.message).toMatch('not connected');
     }
 
     const onlineHandler = jest.fn(async () => {
-      const reply = await client.send({});
+      const reply = await client.send({ padding: 2 });
       expect(reply.type).toBe('reply');
       expect(reply.status).toBe('ok');
 
       const reply2 = await client.send({
-        call_id: 65533
+        call_id: 65533,
+        padding: 3
       });
       expect(reply2.type).toBe('reply');
       expect(reply2.status).toBe('ok');
       expect(reply2.call_id).toBe(65533);
 
-      const reply3 = await client.send({}, 50);
+      const reply3 = await client.send({
+        padding: 4
+      }, 50);
       expect(reply3.type).toBe('reply');
       expect(reply3.status).toBe('ok');
 
       try {
-        await client.send({}, 10);
+        await client.send({
+          padding: 5
+        }, 10);
       } catch (e) {
         expect(e.message).toMatch('timeout');
       }
@@ -285,7 +299,7 @@ test('url param reject', () => {
 test('state', () => {
   return new Promise((resolve) => {
     const client = new RTMClient({
-      url: mockUrl,
+      url: () => mockUrl,
       WebSocket,
       pingInterval: CLIENT_PING_INTERVAL,
       backoffMultiplier: BACKOFF_MULTIPLIER
@@ -303,13 +317,11 @@ test('state', () => {
         client.close();
       });
 
-    const offlineHandler = jest.fn()
-      .mockImplementationOnce(() => {
-        expect(client.getState()).toBe(RTMClientState.RECONNECT);
-      })
-      .mockImplementation(() => {
-        expect(client.getState()).toBe(RTMClientState.CLOSED);
-      });
+    const offlineStateChecker = jest.fn();
+
+    const offlineHandler = jest.fn(() => {
+      offlineStateChecker(client.getState());
+    });
 
     const eventHandler = jest.fn(() => {
       expect(client.getState()).toBe(RTMClientState.CONNECTED);
@@ -318,10 +330,19 @@ test('state', () => {
     const closeHandler = jest.fn(() => {
       expect(client.getState()).toBe(RTMClientState.CLOSED);
 
-      expect(onlineHandler.mock.calls.length).toBe(2);
+      expect(onlineHandler.mock.calls.length).toBeGreaterThan(1);
       expect(closeHandler.mock.calls.length).toBe(1);
-      expect(offlineHandler.mock.calls.length).toBe(2);
+      expect(offlineHandler.mock.calls.length).toBeGreaterThan(1);
       expect(eventHandler).toBeCalled();
+
+      for (let i = 0; i < offlineStateChecker.mock.calls.length; ++i) {
+        const call = offlineStateChecker.mock.calls[i];
+        if (i !== offlineStateChecker.mock.calls.length - 1) {
+          expect(call[0]).toBe(RTMClientState.RECONNECT);
+        } else {
+          expect(call[0]).toBe(RTMClientState.CLOSED);
+        }
+      }
 
       resolve();
     });
