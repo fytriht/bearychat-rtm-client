@@ -1,6 +1,6 @@
-import RTMClient, { RTMClientEvents } from "../";
-import { WebSocket } from "mock-socket";
-import delay from "delay";
+import RTMClient, { RTMClientEvents } from '../';
+import { WebSocket } from 'mock-socket';
+import delay from '../delay';
 
 let server, url;
 

@@ -1,6 +1,6 @@
-import { RTMMessageTypes } from "../";
-import { WebSocket } from "mock-socket";
-import delay from "delay";
+import { RTMMessageTypes } from '../';
+import { WebSocket } from 'mock-socket';
+import delay from '../delay';
 
 const WAIT_SERVER_CLOSE_TIMEOUT = 1000;
 

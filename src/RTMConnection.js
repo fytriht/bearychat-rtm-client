@@ -2,7 +2,7 @@ import { EventEmitter }  from 'events';
 import RTMConnectionState from './RTMConnectionState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMMessageTypes from './RTMMessageTypes';
-import delay from 'delay';
+import delay from './delay';
 import invariant from 'invariant';
 
 /**

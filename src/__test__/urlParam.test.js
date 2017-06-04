@@ -1,5 +1,5 @@
-import RTMClient, { RTMClientEvents } from "../";
-import { WebSocket } from "mock-socket";
+import RTMClient, { RTMClientEvents } from '../';
+import { WebSocket } from 'mock-socket';
 
 let server, url;
 

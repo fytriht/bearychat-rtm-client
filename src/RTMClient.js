@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import invariant from 'invariant';
-import delay from 'delay';
+import delay from './delay';
 import RTMClientEvents from './RTMClientEvents';
 import RTMClientState from './RTMClientState';
 import RTMConnectionEvents from './RTMConnectionEvents';

@@ -1,6 +1,6 @@
 import { RTMMessageTypes } from '..';
-import { Server, WebSocket } from "mock-socket";
-import delay from 'delay';
+import { Server, WebSocket } from 'mock-socket';
+import delay from '../delay';
 
 const SERVER_TIMEOUT = 200;
 
