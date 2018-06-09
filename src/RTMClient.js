@@ -27,6 +27,8 @@ class RTMNotConnectedError extends Error {
 class RTMReconnectTimeoutError extends Error {
   constructor(errorMessage) {
     super(errorMessage);
+    this.constructor = RTMReconnectTimeoutError;
+    this.__proto__ = RTMReconnectTimeoutError.prototype;
   }
 };
 

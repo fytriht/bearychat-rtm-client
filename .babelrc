@@ -14,9 +14,6 @@
         "regenerator": true,
         "moduleName": "babel-runtime"
       }
-    ],
-    ["transform-builtin-extend", {
-      globals: ["Error"]
-    }]
+    ]
   ]
 }
