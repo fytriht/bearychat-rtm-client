@@ -64,7 +64,7 @@ test('reconnect timeout', async () => {
   client.on(RTMClientEvents.ONLINE, onlineHandler);
   client.on(RTMClientEvents.ERROR, errorHandler); 
 
-  await delay(600);
+  await delay(500);
 
   expect(errorHandler.mock.calls.length).toBe(1);
   expect(errorHandler.mock.calls[0][0]).toBeInstanceOf(RTMReconnectTimeoutError);
