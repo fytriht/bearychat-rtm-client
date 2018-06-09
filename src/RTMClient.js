@@ -1,13 +1,16 @@
 import { EventEmitter } from 'events';
 import invariant from 'invariant';
 import delay from './delay';
+import withTimeout from './withTimeout';
 import RTMClientEvents from './RTMClientEvents';
 import RTMClientState from './RTMClientState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMConnection from './RTMConnection';
 import RTMMessageTypes from './RTMMessageTypes';
 
-class RTMTimeoutError extends Error {
+const ONE_MINUTE = 60 * 1000;
+
+class RTMSendTimeoutError extends Error {
   constructor(errorMessage, rtmMessage) {
     super(errorMessage);
     this.rtmMessage = rtmMessage;
@@ -20,6 +23,14 @@ class RTMNotConnectedError extends Error {
     this.rtmMessage = rtmMessage;
   }
 }
+
+class RTMReconnectTimeoutError extends Error {
+  constructor(errorMessage) {
+    super(errorMessage);
+    this.constructor = RTMReconnectTimeoutError;
+    this.__proto__ = RTMReconnectTimeoutError.prototype;
+  }
+};
 
 /**
  * Keep an RTM client running with multiple.
@@ -53,6 +64,8 @@ export default class RTMClient extends EventEmitter {
 
   static RTMMessageTypes = RTMMessageTypes;
 
+  static RTMReconnectTimeoutError = RTMReconnectTimeoutError;
+
   constructor(options) {
     super();
 
@@ -85,6 +98,8 @@ export default class RTMClient extends EventEmitter {
     // following options are internal to speed up testing.
     this._pingInterval = options.pingInterval || 5000;
     this._backoffMultiplier = options.backoffMultiplier || 1000;
+
+    this._reconnectTimeout = options.reconnectTimeout || ONE_MINUTE;
 
     this._connectionEvents = [
       [RTMConnectionEvents.OPEN, this._handleConnectionOpen],
@@ -121,8 +136,9 @@ export default class RTMClient extends EventEmitter {
     this._state = RTMClientState.CONNECTING;
 
     let wsUrl;
+    const timeoutMessage = new RTMReconnectTimeoutError('Reget websocket url error');
     try {
-      wsUrl = await this._getUrl();
+      wsUrl = await withTimeout(this._reconnectTimeout, timeoutMessage, this._getUrl());
     } catch (e) {
       this._reconnect(); // intentionally ignore "await"
       this.emit(RTMClientEvents.ERROR, e);
@@ -186,13 +202,8 @@ export default class RTMClient extends EventEmitter {
     }
 
     const sendPromise = this._send(message);
-    const timeoutPromise = delay.reject(
-      timeout,
-      new RTMTimeoutError('RTM message send timeout.', message)
-    );
-    const sendResult = await Promise.race([sendPromise, timeoutPromise]);
-    timeoutPromise.cancel();
-    return sendResult;
+    const timeoutMessage = new RTMSendTimeoutError('RTM message send timeout.', message);
+    return withTimeout(timeout, timeoutMessage, sendPromise);
   }
 
   _handleConnectionOpen = () => {
