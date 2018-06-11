@@ -5,6 +5,14 @@ import RTMMessageTypes from './RTMMessageTypes';
 import delay from './delay';
 import invariant from 'invariant';
 
+export class RTMPingTimeoutError extends Error {
+  constructor(errorMessage) {
+    super(errorMessage);
+    this.constructor = RTMPingTimeoutError;
+    this.__proto__ = RTMPingTimeoutError.prototype;
+  }
+}
+
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
  * omitting obsolete message types.
@@ -32,13 +40,15 @@ export default class RTMConnection extends EventEmitter {
 
   state = {};
 
-  constructor({ url, WebSocket, pingInterval }) {
+  constructor({ url, WebSocket, pingInterval, pingTimeout }) {
     super();
+    this._pingTimeout = pingTimeout;
     this._pingInterval = pingInterval;
     this._currentCallId = 0;
     this._state = RTMConnectionState.INITIAL;
     this._ws = new WebSocket(url);
     this._callbackMap = new Map();
+    this._pingMap = new Map();
 
     this._ws.addEventListener('open', this._handleOpen);
     this._ws.addEventListener('close', this._handleClose);
@@ -61,6 +71,8 @@ export default class RTMConnection extends EventEmitter {
     const message = JSON.parse(event.data);
     switch (message.type) {
       case RTMMessageTypes.PONG:
+        this._handlePongMessage(message);
+        break;
       case RTMMessageTypes.OK:
         // ignore deprecated events
         break;
@@ -71,6 +83,15 @@ export default class RTMConnection extends EventEmitter {
         this.emit(RTMConnectionEvents.MESSAGE, message);
     }
   };
+
+  _handlePongMessage(message) {
+    const callId = message.call_id;
+    const pingMap = this._pingMap;
+
+    const cancel = pingMap.get(callId);
+    pingMap.delete(callId);
+    cancel && cancel(message);
+  }
 
   _handleReplyMessage(message) {
     const callbackMap = this._callbackMap;
@@ -121,7 +142,20 @@ export default class RTMConnection extends EventEmitter {
   }
 
   _ping() {
+    const callId = this._getNextCallId();
+
+    const pingTimeoutError = new RTMPingTimeoutError('Ping timeouted.');
+    const pingKeeper = delay.reject(this._pingTimeout, pingTimeoutError);
+    this._pingMap.set(callId, pingKeeper.cancel);
+    pingKeeper.catch(error => {
+      if (error instanceof RTMPingTimeoutError) {
+        this.emit(RTMConnectionEvents.ERROR, error);
+        this.close();
+      }
+    });
+
     this.send({
+      call_id: callId,
       type: RTMMessageTypes.PING
     });
   }

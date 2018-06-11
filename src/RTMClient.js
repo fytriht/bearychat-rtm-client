@@ -5,7 +5,7 @@ import withTimeout from './withTimeout';
 import RTMClientEvents from './RTMClientEvents';
 import RTMClientState from './RTMClientState';
 import RTMConnectionEvents from './RTMConnectionEvents';
-import RTMConnection from './RTMConnection';
+import RTMConnection, { RTMPingTimeoutError } from './RTMConnection';
 import RTMMessageTypes from './RTMMessageTypes';
 
 const ONE_MINUTE = 60 * 1000;
@@ -66,6 +66,8 @@ export default class RTMClient extends EventEmitter {
 
   static RTMReconnectTimeoutError = RTMReconnectTimeoutError;
 
+  static RTMPingTimeoutError = RTMPingTimeoutError;
+
   constructor(options) {
     super();
 
@@ -95,6 +97,7 @@ export default class RTMClient extends EventEmitter {
     this._url = url;
     this.WebSocket = WebSocket;
 
+    this._pingTimeout = options.pingTimeout || 3000;
     // following options are internal to speed up testing.
     this._pingInterval = options.pingInterval || 5000;
     this._backoffMultiplier = options.backoffMultiplier || 1000;
@@ -149,7 +152,8 @@ export default class RTMClient extends EventEmitter {
     this._setConnection(new RTMConnection({
       url: wsUrl,
       WebSocket: this.WebSocket,
-      pingInterval: this._pingInterval
+      pingInterval: this._pingInterval,
+      pingTimeout: this._pingTimeout
     }));
   };
 
