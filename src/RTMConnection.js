@@ -14,6 +14,8 @@ export class RTMPingTimeoutError extends Error {
   }
 }
 
+const pingTimeoutError = new RTMPingTimeoutError('Ping timeouted.');
+
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
  * omitting obsolete message types.
@@ -131,8 +133,6 @@ export default class RTMConnection extends EventEmitter {
   }
 
   _ping() {
-    const pingTimeoutError = new RTMPingTimeoutError('Ping timeouted.');
-
     withTimeout(this._pingTimeout, pingTimeoutError, this.send({
       type: RTMMessageTypes.PING
     })).catch(error => {
