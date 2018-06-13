@@ -5,6 +5,7 @@ import delay from '../delay';
 const SERVER_TIMEOUT = 200;
 
 export const CLIENT_PING_INTERVAL = 100;
+export const CLIENT_PING_TIMEOUT = 50;
 export const BACKOFF_MULTIPLIER = 100;
 
 let urlCounter = 0;
@@ -13,7 +14,7 @@ function generateMockUrl() {
   return 'ws://rtm.local.bearychat.com/nimbus/ws:fake-token' + (urlCounter++);
 }
 
-export default async function createMockServer() {
+export default async function createMockServer(ignorePing = false) {
   const mockUrl = generateMockUrl();
   const mockServer = new Server(mockUrl);
 
@@ -51,6 +52,10 @@ export default async function createMockServer() {
       resetServerTimeout();
 
       message = JSON.parse(message);
+
+      if (ignorePing && message.type === RTMMessageTypes.PING) {
+        return;
+      }
 
       await delay(20);
 

@@ -4,6 +4,17 @@ import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMMessageTypes from './RTMMessageTypes';
 import delay from './delay';
 import invariant from 'invariant';
+import withTimeout from './withTimeout';
+
+export class RTMPingTimeoutError extends Error {
+  constructor(errorMessage) {
+    super(errorMessage);
+    this.constructor = RTMPingTimeoutError;
+    this.__proto__ = RTMPingTimeoutError.prototype;
+  }
+}
+
+const pingTimeoutError = new RTMPingTimeoutError('Ping timeouted.');
 
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
@@ -32,8 +43,9 @@ export default class RTMConnection extends EventEmitter {
 
   state = {};
 
-  constructor({ url, WebSocket, pingInterval }) {
+  constructor({ url, WebSocket, pingInterval, pingTimeout }) {
     super();
+    this._pingTimeout = pingTimeout;
     this._pingInterval = pingInterval;
     this._currentCallId = 0;
     this._state = RTMConnectionState.INITIAL;
@@ -121,8 +133,13 @@ export default class RTMConnection extends EventEmitter {
   }
 
   _ping() {
-    this.send({
+    withTimeout(this._pingTimeout, pingTimeoutError, this.send({
       type: RTMMessageTypes.PING
+    })).catch(error => {
+      if (error instanceof RTMPingTimeoutError) {
+        this.emit(RTMConnectionEvents.ERROR, error);
+        this.close();
+      }
     });
   }
 
