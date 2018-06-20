@@ -55,7 +55,7 @@ test('keep alive', async () => {
   expect(eventHandler.mock.calls.length).toBe(1);
 });
 
-test('close connection when timeouted', async () => {
+test('terminate connection when timeouted', async () => {
   const result = await createMockServer(true);
   server = result.server;
   url = result.url;
