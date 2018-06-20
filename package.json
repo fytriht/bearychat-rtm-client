@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "clean": "rm -f *.js",
-    "build:babel": "babel src -d . --ignore src/__test__/*.js --source-maps inline",
+    "build:babel": "babel src -d . --ignore 'src/__test__/*.js' --source-maps inline",
     "build": "npm run clean && npm run build:babel",
     "build:doc": "markdown-toc -i README.md",
     "prepublish": "npm run build"
