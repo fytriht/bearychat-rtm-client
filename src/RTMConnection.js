@@ -138,7 +138,7 @@ export default class RTMConnection extends EventEmitter {
     })).catch(error => {
       if (error instanceof RTMPingTimeoutError) {
         this.emit(RTMConnectionEvents.ERROR, error);
-        this.close();
+        this._terminate();
       }
     });
   }
@@ -152,6 +152,17 @@ export default class RTMConnection extends EventEmitter {
 
   close() {
     this._state = RTMConnectionState.CLOSING;
+    this._ws.close();
+  }
+
+  _terminate() {
+    this._ws.removeEventListener('open', this._handleOpen);
+    this._ws.removeEventListener('close', this._handleClose);
+    this._ws.removeEventListener('message', this._handleMessage);
+    this._ws.removeEventListener('error', this._handleError);
+    this._state = RTMConnectionState.CLOSED;
+    this.emit(RTMConnectionEvents.CLOSE);
+
     this._ws.close();
   }
 }
