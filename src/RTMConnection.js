@@ -136,7 +136,7 @@ export default class RTMConnection extends EventEmitter {
     withTimeout(this._pingTimeout, pingTimeoutError, this.send({
       type: RTMMessageTypes.PING
     })).catch(error => {
-      if (error instanceof RTMPingTimeoutError) {
+      if (error instanceof RTMPingTimeoutError && this._state !== RTMConnectionState.CLOSED) {
         this.emit(RTMConnectionEvents.ERROR, error);
         this._terminate();
       }
