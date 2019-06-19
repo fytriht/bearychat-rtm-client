@@ -10,13 +10,6 @@ import RTMMessageTypes from './RTMMessageTypes';
 
 const ONE_MINUTE = 60 * 1000;
 
-class RTMSendTimeoutError extends Error {
-  constructor(errorMessage, rtmMessage) {
-    super(errorMessage);
-    this.rtmMessage = rtmMessage;
-  }
-}
-
 class RTMNotConnectedError extends Error {
   constructor(errorMessage, rtmMessage) {
     super(errorMessage);
@@ -186,28 +179,13 @@ export default class RTMClient extends EventEmitter {
     }
   }
 
-  async _send(message) {
-    if (this._connection) {
-      return await this._connection.send(message);
+  async send(message) {
+    if (!this._connection) {
+      throw new RTMNotConnectedError(
+        'Client currently not connected, the current state is: ' + this.getState()
+      );
     }
-    throw new RTMNotConnectedError(
-      'Client currently not connected, the current state is: ' + this.getState()
-    );
-  }
-
-
-  async send(message, timeout) {
-    if (!timeout || timeout < 0) {
-      timeout = Infinity;
-    }
-
-    if (!Number.isFinite(timeout)) {
-      return await this._send(message);
-    }
-
-    const sendPromise = this._send(message);
-    const timeoutMessage = new RTMSendTimeoutError('RTM message send timeout.', message);
-    return withTimeout(timeout, timeoutMessage, sendPromise);
+    return this._connection.send(message);
   }
 
   _handleConnectionOpen = () => {
