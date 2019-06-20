@@ -97,9 +97,9 @@ export default class RTMClient extends EventEmitter {
     this._url = url;
     this.WebSocket = WebSocket;
 
-    this._pingTimeout = options.pingTimeout || 3000;
+    this._pingTimeout = options.pingTimeout || 15 * 1000;
     // following options are internal to speed up testing.
-    this._pingInterval = options.pingInterval || 5000;
+    this._pingInterval = options.pingInterval || 15 * 1000;
     this._backoffMultiplier = options.backoffMultiplier || 1000;
 
     this._reconnectTimeout = options.reconnectTimeout || ONE_MINUTE;
