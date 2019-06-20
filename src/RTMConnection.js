@@ -1,20 +1,17 @@
-import { EventEmitter }  from 'events';
+import { EventEmitter } from 'events';
 import RTMConnectionState from './RTMConnectionState';
 import RTMConnectionEvents from './RTMConnectionEvents';
 import RTMMessageTypes from './RTMMessageTypes';
 import delay from './delay';
 import invariant from 'invariant';
-import withTimeout from './withTimeout';
 
-export class RTMPingTimeoutError extends Error {
-  constructor(errorMessage) {
-    super(errorMessage);
-    this.constructor = RTMPingTimeoutError;
-    this.__proto__ = RTMPingTimeoutError.prototype;
+class RTMSendTimeoutError extends Error {
+  constructor(message = 'Send message timeout.') {
+    super(message);
+    this.constructor = RTMSendTimeoutError;
+    this.__proto__ = RTMSendTimeoutError.prototype;
   }
 }
-
-const pingTimeoutError = new RTMPingTimeoutError('Ping timeouted.');
 
 /**
  * Keep a WebSocket connection with server, handling heartbeat events,
@@ -51,6 +48,7 @@ export default class RTMConnection extends EventEmitter {
     this._state = RTMConnectionState.INITIAL;
     this._ws = new WebSocket(url);
     this._callbackMap = new Map();
+    this._lastSentTs = 0;
 
     this._ws.addEventListener('open', this._handleOpen);
     this._ws.addEventListener('close', this._handleClose);
@@ -109,7 +107,21 @@ export default class RTMConnection extends EventEmitter {
     return this._currentCallId++;
   }
 
-  send(message) {
+  async send(message) {
+    try {
+      return await this._send(message);
+    } catch (error) {
+      if (error instanceof RTMSendTimeoutError) {
+        if (this._state !== RTMConnectionState.CLOSED) {
+          this.emit(RTMConnectionEvents.ERROR, error);
+          this._terminate();
+        }
+      }
+      throw error;
+    }
+  }
+
+  _send(message) {
     if (!message.call_id) {
       message = {
         ...message,
@@ -117,34 +129,44 @@ export default class RTMConnection extends EventEmitter {
       };
     }
 
-    const callIdMap = this._callbackMap;
+    const callbackMap = this._callbackMap;
     const callId = message.call_id;
 
     invariant(
-      !callIdMap.has(callId),
+      !callbackMap.has(callId),
       'Duplicate call id %s',
       callId
     );
 
-    return new Promise((resolve) => {
-      callIdMap.set(callId, resolve);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new RTMSendTimeoutError());
+      }, this._pingTimeout);
+
+      callbackMap.set(callId, (...args) => {
+        clearTimeout(timer);
+        resolve(...args);
+      });
+
+      this._lastSentTs = Date.now();
       this._ws.send(JSON.stringify(message));
     });
   }
 
   _ping() {
-    withTimeout(this._pingTimeout, pingTimeoutError, this.send({
+    this.send({
       type: RTMMessageTypes.PING
-    })).catch(error => {
-      if (error instanceof RTMPingTimeoutError && this._state !== RTMConnectionState.CLOSED) {
-        this.emit(RTMConnectionEvents.ERROR, error);
-        this._terminate();
-      }
     });
   }
 
   _startLoop = async () => {
     while (this._state === RTMConnectionState.CONNECTED) {
+      const elapsed = Date.now() - this._lastSentTs;
+      if (elapsed < this._pingInterval) {
+        await delay(this._pingInterval - elapsed);
+        continue;
+      }
+
       this._ping();
       await delay(this._pingInterval);
     }
