@@ -114,7 +114,7 @@ export default class RTMConnection extends EventEmitter {
       if (error instanceof RTMPingTimeoutError) {
         if (this._state !== RTMConnectionState.CLOSED) {
           this.emit(RTMConnectionEvents.ERROR, error);
-          this._terminate();
+          this._terminate('Reply timeouted.');
         }
       }
       throw error;
@@ -172,12 +172,12 @@ export default class RTMConnection extends EventEmitter {
     }
   };
 
-  close() {
+  close(reason) {
     this._state = RTMConnectionState.CLOSING;
-    this._ws.close();
+    this._ws.close(1000, reason);
   }
 
-  _terminate() {
+  _terminate(reason) {
     this._ws.removeEventListener('open', this._handleOpen);
     this._ws.removeEventListener('close', this._handleClose);
     this._ws.removeEventListener('message', this._handleMessage);
@@ -185,6 +185,6 @@ export default class RTMConnection extends EventEmitter {
     this._state = RTMConnectionState.CLOSED;
     this.emit(RTMConnectionEvents.CLOSE);
 
-    this._ws.close();
+    this._ws.close(1000, reason);
   }
 }
