@@ -175,11 +175,11 @@ export default class RTMClient extends EventEmitter {
     return await url();
   }
 
-  close() {
+  close(reason = 'unknown reason') {
     if (this._connection && this._state !== RTMClientState.CLOSING) {
       this._state = RTMClientState.CLOSING;
       this._forceClose = true;
-      this._connection.close();
+      this._connection.close(reason);
     } else if (this._state !== RTMClientState.CLOSED) {
       this._state = RTMClientState.CLOSED;
       this.emit(RTMClientEvents.CLOSE);
