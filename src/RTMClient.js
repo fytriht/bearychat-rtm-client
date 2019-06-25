@@ -158,8 +158,17 @@ export default class RTMClient extends EventEmitter {
   };
 
   async _reconnect() {
+    // There is possibilty that a single call of _reconnect() is followd after an asynchronous task,
+    // we should check the closing/close state before really do the reconnect.
+    if (!this._shouldDoReconnect()) return;
+
     this._state = RTMClientState.RECONNECT;
     await delay(generateInterval(this._reconnectAttempts, this._backoffMultiplier));
+
+    // During the time of the delay, `this.close()` may be called, so we should
+    // recheck the state before connection.
+    if (!this._shouldDoReconnect()) return;
+
     this._reconnectAttempts++;
     this.connect();
   }
@@ -272,6 +281,10 @@ export default class RTMClient extends EventEmitter {
     });
 
     this._connection = null;
+  }
+
+  _shouldDoReconnect() {
+    return this._state !== RTMClientState.CLOSING && this._state !== RTMClientState.CLOSED;
   }
 }
 
