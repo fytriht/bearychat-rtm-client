@@ -156,7 +156,7 @@ export default class RTMConnection extends EventEmitter {
   _ping() {
     this.send({
       type: RTMMessageTypes.PING
-    });
+    }).catch(() => { /* noop */ });
   }
 
   _startLoop = async () => {

@@ -1,5 +1,5 @@
 process.on('unhandledRejection', (reason) => {
-  console.error('unhandledRejection: ', reason);
+  throw reason;
 });
 
 import createMockServer, { CLIENT_PING_INTERVAL, CLIENT_PING_TIMEOUT, BACKOFF_MULTIPLIER } from './createMockServer';
